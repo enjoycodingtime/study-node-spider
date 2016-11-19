@@ -1,28 +1,30 @@
+const charset = require('superagent-charset');
+const request = require('superagent');
+charset(request);
+
 var express = require('express');
 var url = require('url'); //解析操作url
-var superagent = require('superagent'); //这三个外部依赖不要忘记npm install
+// var superagent = require('superagent-charset'); //这三个外部依赖不要忘记npm install
 var cheerio = require('cheerio');
 var eventproxy = require('eventproxy');
-var itemName = 'review';
-var targetUrl = 'http://traveldaily.cn/' + itemName + '/';
-var mainUrl = 'http://traveldaily.cn';
+var itemName = 'three';
+var targetUrl = 'http://www.feeyo.com/airport_code.asp?page=';
+// var mainUrl = 'http://traveldaily.cn';
 var fs = require('fs');
 var xlsx = require('node-xlsx');
 var allArticles = [];
-var page = 5;
-
-for (var i = 1; i <= page; i++) {
+var page = 1;
+var total = 0;
+for (var i = page; i < page +9; i++) {
     (function(i) {
-        superagent.get(targetUrl + i)
+        request.get(targetUrl + i).charset('gbk')
             .end(function(err, res) {
-                //console.log(res);
                 getEliment(res, function() {
-
                     if (i == page) {
-                        console.log('over')
-                        
-                        var file = xlsx.build([{name: "mySheetName", data: allArticles}]);
-                        fs.writeFileSync('xlsxs/'+itemName + '.xlsx', file, 'binary');
+                        setTimeout(function(){
+                            var file = xlsx.build([{name: "mySheetName", data: allArticles}]);
+                            fs.writeFileSync('xlsxs/'+itemName + '.xlsx', file, 'binary');
+                        }, 3000);
                         return
                     }
                 });
@@ -36,21 +38,21 @@ for (var i = 1; i <= page; i++) {
 var getEliment = function(res, callback) {
     var $ = cheerio.load(res.text);
     //通过CSS selector来筛选数据
-    $('.main-item .item-l h3').each(function(idx, element) {
-        var detailUrl = mainUrl + element.children[0].attribs.href;
-        var title = element.children[0].children[0].data;
-        getDetailInfo(detailUrl, function(source) {
-                var tempArray = source.split('+');
-                var fromSource = tempArray[0];
-                var publishTime = tempArray[1];
-                var array = [title, fromSource, publishTime];
-                allArticles.push(array);
-                callback();
-                // console.log(title+' '+ source)
-            })
-            // console.log(getDetailInfo(detailUrl));
-            // console.log(element.children[0].children[0].data);
+    $('tbody tr').each(function(idx, element) {
+        // console.log('tr-----'+idx)
+        total ++ ;
+        if(idx != 0 && idx < 21) {
+            var city = element.children[0].children[0].children[0].data;
+            var three = element.children[1].children[0].data;
+            var name = element.children[3].children[0].data;
+            var en =  element.children[4].children[0].data;
+            // console.log(city)
+            var array = [city,three,name,en];
+            allArticles.push(array);
+
+        }
     });
+    callback();
 }
 
 var getDetailInfo = function(url, callback) {

@@ -19,33 +19,42 @@ var bubbleSort = function(array) {
 };
 
 var getExcleVoteArray = function(array) {
+
     var resultArray = [];
     var arrayLength = array.length;
-    for (var i = 0; i < arrayLength; i++) {
-        var tempArray = [];
-        // var nameArray = array[i].name.split("，");
-        var nameArray = array[i].name.split(".");
-        var voteOrder = nameArray[0];
-        var itemName = nameArray[1];
-        var voteNumber = array[i].cnt;
-        tempArray = [voteOrder, itemName, voteNumber];
-        resultArray.push(tempArray);
-    };
+    for (var j = 0; j < arrayLength; j ++) {
+        var subArrayLength = array[j].options.length;
+        for (var i = 0; i < subArrayLength; i++) {
+            var tempArray = [];
+            var nameArray = array[j].options[i].name.split("、");
+            // var nameArray = array[i].name.split(".");
+            var voteOrder = nameArray[0];
+            
+            voteOrder   =   voteOrder.replace(/\s+/g,"");  
+            var itemName = nameArray[1];
+            var voteNumber = array[j].options[i].cnt;
+            tempArray = [voteOrder, itemName, voteNumber];
+            resultArray.push(tempArray);
+        };
+        
+    }
 
     return bubbleSort(resultArray);
 };
 
 
 var writeInfoToExcle = function(voteJson) {
-    var data = getExcleVoteArray(voteJson.options);
+    var data = getExcleVoteArray(voteJson);
     var date = new Date();
     var time = date.getFullYear()+'-'+ (date.getMonth()+1) + '-' + date.getDate()+' ' +date.getHours() + ':' + date.getMinutes();
+    console.log(time);
     data.push(['Time',time,'']);
     var file = xlsx.build([{
-        name: voteJson.title,
+        // name: voteJson.title,
+        name: "2016中国酒店品牌高峰论坛人气嘉宾评选！",
         data: data
     }]);
-    fs.writeFileSync('voteExcle/' + voteJson.title + '.xlsx', file, 'binary');
+    fs.writeFileSync('voteExcle/' +  '高峰论坛'+time+'.xlsx', file, {encoding:'binary'});
     console.log('okk');
 };
 
