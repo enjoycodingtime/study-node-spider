@@ -7,18 +7,28 @@ var url = require('url'); //解析操作url
 // var superagent = require('superagent-charset'); //这三个外部依赖不要忘记npm install
 var cheerio = require('cheerio');
 var eventproxy = require('eventproxy');
-var itemName = 'hotArticle6';
+var itemName = 'hotArticle2018';
 var mainUrl = 'https://mp.weixin.qq.com/cgi-bin/newmasssendpage';
 var fs = require('fs');
 var xlsx = require('node-xlsx');
 var allArticles = [];
 var page = 1;
 var pageSize = 7;
-var total = 184;
-// var total = 31;
+var total = 54;
 var getTotal = 0;
-for (var ii = page; ii <= total; ii++) {
-    (function (ii) {
+
+console.log('start');
+var saveToExcel = function(){
+    var file = xlsx.build([{name: "mySheetName", data: allArticles}]);
+    fs.writeFileSync('xlsxs/' + itemName + '.xlsx', file, 'binary');
+}
+var getOnePage = function (){
+    if(getTotal>total){
+        console.log('over');
+        saveToExcel();
+        return;
+    }else{
+        console.log('total:'+getTotal);
         request.get('/', function (req, res) {
             var url = mainUrl;
             request
@@ -26,23 +36,22 @@ for (var ii = page; ii <= total; ii++) {
                 .type('application/json')
                 .set({
                     'Content-Type':'application/json',
-                    'Referer':'https://mp.weixin.qq.com/cgi-bin/home?t=home/index&lang=zh_CN&token=2095446785',
+                    'Referer':'https://mp.weixin.qq.com/cgi-bin/home?t=home/index&lang=zh_CN&token=660740117',
                     'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
                     'Cookie':'',
                 }).charset('utf-8')
                 .query({ count: pageSize })
-                .query({ begin: ii * (pageSize-1)})
-                .query({ token: '2095446785' })
+                .query({ begin: getTotal * pageSize})
+                .query({ token: '660740117' })
                 .query({ lang: 'zh_CN' })
                 .query({ f: 'json' })
-                .query({ ajax: 'ajax' })
+                .query({ ajax: 1 })
                 .end(function (err, res) {
                     if(err || !res){
                         return ;
                     }
                     var response = res.text
                     if(response) {
-                        console.log(ii)
                         var data = JSON.parse(response);
                         var sent_list = data.sent_list;
                         getTotal++;
@@ -65,16 +74,10 @@ for (var ii = page; ii <= total; ii++) {
                                 allArticles.push(array);
                             }
                         }
-                        if (getTotal >= total-30) {
-                            setTimeout(function () {
-                                var file = xlsx.build([{name: "mySheetName", data: allArticles}]);
-                                fs.writeFileSync('xlsxs/' + itemName + '.xlsx', file, 'binary');
-                            }, 3000);
-                            return
-                        }
+                        getOnePage();
                     }
                 });
         })
-    })(ii)
-
+    }
 }
+getOnePage();
